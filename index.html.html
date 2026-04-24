@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="牙科報到">
+<title>牙科診所報到系統</title>
+<style>
+  :root {
+    --teal:#0d9488; --teal-dark:#0f766e; --teal-light:#ccfbf1;
+    --navy:#0f172a; --slate:#334155; --muted:#64748b;
+    --border:#e2e8f0; --bg:#f1f5f9; --white:#fff;
+    --red:#ef4444; --amber:#f59e0b; --green:#10b981; --blue:#3b82f6;
+    --line:#06c755;
+    --radius:14px; --shadow:0 2px 12px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;font-family:-apple-system,'Noto Sans TC',sans-serif;background:var(--bg);color:var(--navy);}
+
+  /* ── Header ── */
+  header{
+    background:var(--teal);color:#fff;
+    padding:0 20px;height:60px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;
+    box-shadow:0 2px 8px rgba(13,148,136,.3);
+  }
+  .logo{display:flex;align-items:center;gap:10px;}
+  .logo-icon{font-size:24px;}
+  .logo-text h1{font-size:17px;font-weight:700;color:#fff;}
+  .logo-text small{font-size:11px;color:rgba(255,255,255,.75);}
+  #clock{font-size:13px;color:rgba(255,255,255,.85);text-align:right;line-height:1.4;}
+
+  /* ── Tabs ── */
+  .tabs{display:flex;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:60px;z-index:99;}
+  .tab{flex:1;padding:13px 0;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;}
+  .tab.active{color:var(--teal);border-bottom-color:var(--teal);}
+
+  /* ── Pages ── */
+  .page{display:none;padding:16px;max-width:900px;margin:0 auto;}
+  .page.active{display:block;}
+
+  /* ── Cards ── */
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;}
+  .card-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+
+  /* ── Form ── */
+  .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .f{display:flex;flex-direction:column;gap:5px;}
+  .f.full{grid-column:1/-1;}
+  .f label{font-size:12px;font-weight:600;color:var(--slate);}
+  .f input,.f select,.f textarea{
+    padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;
+    font-family:inherit;font-size:15px;color:var(--navy);background:var(--white);
+    -webkit-appearance:none;appearance:none;
+  }
+  .f input:focus,.f select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.12);}
+  .f textarea{resize:none;height:80px;font-size:14px;}
+
+  /* ── Buttons ── */
+  .btn{display:flex;align-items:center;justify-content:center;gap:7px;
+    padding:13px 20px;border-radius:12px;border:none;font-family:inherit;
+    font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;width:100%;}
+  .btn-teal{background:var(--teal);color:#fff;}
+  .btn-teal:active{background:var(--teal-dark);}
+  .btn-outline{background:var(--white);border:1.5px solid var(--border);color:var(--slate);}
+  .btn-red{background:#fee2e2;color:var(--red);border:none;}
+  .btn-line{background:var(--line);color:#fff;}
+  .btn-sm{padding:8px 14px;font-size:13px;width:auto;border-radius:9px;}
+  .btn-green-sm{background:#d1fae5;color:#065f46;padding:8px 14px;font-size:13px;width:auto;border-radius:9px;border:none;cursor:pointer;font-weight:600;}
+  .btn-amber-sm{background:#fef3c7;color:#92400e;padding:8px 14px;font-size:13px;width:auto;border-radius:9px;border:none;cursor:pointer;font-weight:600;}
+  .btn-red-sm{background:#fee2e2;color:var(--red);padding:8px 14px;font-size:13px;width:auto;border-radius:9px;border:none;cursor:pointer;font-weight:600;}
+  .btn-gray-sm{background:var(--bg);color:var(--muted);padding:8px 14px;font-size:13px;width:auto;border-radius:9px;border:1px solid var(--border);cursor:pointer;font-weight:600;}
+  .fa{display:flex;gap:10px;margin-top:14px;}
+
+  /* ── Stats ── */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+  .stat{background:var(--white);border-radius:12px;padding:14px 10px;text-align:center;box-shadow:var(--shadow);}
+  .stat-n{font-size:28px;font-weight:800;}
+  .stat-l{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  /* ── Queue list (card style for iPad) ── */
+  .q-list{display:flex;flex-direction:column;gap:10px;}
+  .q-card{background:var(--white);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;display:flex;align-items:center;gap:14px;}
+  .q-num{width:40px;height:40px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;}
+  .q-info{flex:1;min-width:0;}
+  .q-name{font-size:16px;font-weight:700;}
+  .q-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+  .q-ev{font-size:12px;color:var(--teal);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .q-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
+  .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:4px;}
+  .bw{background:#fef3c7;color:#92400e;}
+  .bc{background:#dbeafe;color:#1e40af;}
+  .bd{background:#d1fae5;color:#065f46;}
+  .ba{background:#fee2e2;color:var(--red);}
+  .q-btns{display:flex;gap:6px;}
+
+  /* ── Event picker ── */
+  .ev-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
+  .ev-card{background:var(--bg);border:1.5px solid var(--border);border-left:4px solid var(--teal);
+    border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s;}
+  .ev-card.sel{background:var(--teal-light);border-color:var(--teal);}
+  .ev-name{font-size:14px;font-weight:600;}
+  .ev-time{font-size:12px;color:var(--muted);margin-top:2px;}
+  .hint{text-align:center;color:var(--muted);font-size:13px;padding:20px;}
+
+  /* ── LINE settings ── */
+  .line-status{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .ldot{width:10px;height:10px;border-radius:50%;background:var(--red);}
+  .ldot.on{background:var(--line);}
+  .token-input{display:flex;gap:8px;margin-bottom:8px;}
+  .token-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;}
+  .token-input input:focus{outline:none;border-color:var(--line);}
+
+  /* ── Toast ── */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--navy);color:#fff;padding:13px 22px;border-radius:12px;
+    font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:999;
+    white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+  #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+  /* ── Modal ── */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;
+    justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--white);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:600px;
+    transform:translateY(100%);transition:transform .3s;max-height:90vh;overflow-y:auto;}
+  .overlay.open .modal{transform:translateY(0);}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px;}
+  .modal h3{font-size:18px;font-weight:700;margin-bottom:16px;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .detail-item{background:var(--bg);border-radius:10px;padding:10px 12px;}
+  .detail-item.full{grid-column:1/-1;}
+  .detail-label{font-size:11px;color:var(--muted);margin-bottom:3px;}
+  .detail-val{font-size:14px;font-weight:600;}
+
+  /* ── New patient badge ── */
+  .new-badge{background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;
+    padding:2px 8px;border-radius:20px;margin-left:6px;}
+
+  /* empty state */
+  .empty{text-align:center;padding:48px 20px;color:var(--muted);}
+  .empty-icon{font-size:48px;margin-bottom:12px;}
+  .empty p{font-size:15px;}
+
+  @media(max-width:600px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .fg{grid-template-columns:1fr;}
+    .q-card{flex-wrap:wrap;}
+    .q-actions{flex-direction:row;width:100%;justify-content:space-between;align-items:center;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🦷</div>
+    <div class="logo-text">
+      <h1>牙科診所報到系統</h1>
+      <small id="dateDisplay"></small>
+    </div>
+  </div>
+  <div id="clock"></div>
+</header>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab('checkin')">🏥 報到</div>
+  <div class="tab" onclick="showTab('queue')">📋 候診</div>
+  <div class="tab" onclick="showTab('calendar')">📅 預約</div>
+  <div class="tab" onclick="showTab('settings')">⚙️ 設定</div>
+</div>
+
+<!-- ══ PAGE: 報到 ══ -->
+<div class="page active" id="page-checkin">
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="sTotal" style="color:var(--teal)">0</div><div class="stat-l">今日掛號</div></div>
+    <div class="stat"><div class="stat-n" id="sWait" style="color:var(--amber)">0</div><div class="stat-l">等候中</div></div>
+    <div class="stat"><div class="stat-n" id="sDone" style="color:var(--green)">0</div><div class="stat-l">已看診</div></div>
+    <div class="stat"><div class="stat-n" id="sAbsent" style="color:var(--red)">0</div><div class="stat-l">未到</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">➕ 患者報到</div>
+    <div class="fg">
+      <div class="f"><label>患者姓名 *</label><input id="fName" type="text" placeholder="請輸入姓名" autocomplete="off"></div>
+      <div class="f"><label>身分證後兩碼</label><input id="fId" type="text" placeholder="例：34" maxlength="2" inputmode="numeric" autocomplete="off"></div>
+      <div class="f"><label>聯絡電話</label><input id="fPhone" type="tel" placeholder="09XX-XXX-XXX"></div>
+      <div class="f"><label>看診時間</label><input id="fTime" type="time" value="09:00"></div>
+      <div class="f full"><label>對應預約事件（選填）</label>
+        <select id="fEv"><option value="">-- 無預約 / 直接報到 --</option></select>
+      </div>
+      <div class="f full"><label>主訴 / 備註</label>
+        <textarea id="fNote" placeholder="例：右下臼齒痛、回診拆線..."></textarea>
+      </div>
+    </div>
+    <div class="fa">
+      <button class="btn btn-teal" onclick="addPatient()">✅ 確認報到</button>
+      <button class="btn btn-outline" style="width:auto;padding:13px 18px" onclick="clearForm()">清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: 候診 ══ -->
+<div class="page" id="page-queue">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:14px;font-weight:700;color:var(--navy)">今日候診名單</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-gray-sm" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn-red-sm" onclick="clearAll()">🗑 清空</button>
+    </div>
+  </div>
+  <div class="q-list" id="qList">
+    <div class="empty"><div class="empty-icon">🦷</div><p>今日尚無候診患者</p></div>
+  </div>
+</div>
+
+<!-- ══ PAGE: 預約 ══ -->
+<div class="page" id="page-calendar">
+  <div class="card">
+    <div class="card-title">📅 Google Calendar 連動</div>
+
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div class="ldot" id="gcDot"></div>
+        <span id="gcLabel" style="font-size:14px;font-weight:600">尚未連接</span>
+      </div>
+      <button class="btn btn-teal" id="gcBtn" onclick="handleGcAuth()">🔗 連接 Google Calendar</button>
+    </div>
+
+    <div class="f" style="margin-bottom:12px">
+      <label>選擇日曆</label>
+      <select id="calSel" onchange="onCalChange()" disabled>
+        <option>-- 請先授權 --</option>
+      </select>
+    </div>
+    <div class="f" style="margin-bottom:14px">
+      <label>診療日期</label>
+      <input type="date" id="dateInput" onchange="loadEvents()" style="padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;">
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
+      當日預約 <span id="evCount"></span>
+    </div>
+    <div class="ev-list" id="evList"><div class="hint">請先連接 Google Calendar</div></div>
+  </div>
+</div>
+
+<!-- ══ PAGE: 設定 ══ -->
+<div class="page" id="page-settings">
+
+  <!-- LINE Messaging API -->
+  <div class="card">
+    <div class="card-title">💬 LINE Messaging API 設定</div>
+    <div class="line-status">
+      <div class="ldot" id="lineDot"></div>
+      <span id="lineLabel" style="font-size:14px;font-weight:600">未設定</span>
+    </div>
+
+    <div class="f" style="margin-bottom:10px">
+      <label>① Channel Access Token</label>
+      <div class="token-input">
+        <input id="lineToken" type="password" placeholder="貼上 Channel Access Token...">
+        <button class="btn btn-line btn-sm" onclick="saveLineToken()">儲存</button>
+      </div>
+    </div>
+
+    <div class="f" style="margin-bottom:12px">
+      <label>② 公務手機 User ID</label>
+      <div class="token-input">
+        <input id="lineUserId" type="text" placeholder="Uxxxxxxxxxxxxxxxxx...">
+        <button class="btn btn-line btn-sm" onclick="saveUserId()">儲存</button>
+      </div>
+    </div>
+
+    <div style="background:#f0fdf4;border-radius:10px;padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--slate);margin-bottom:6px">📱 自動取得公務手機 User ID</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">確認公務手機已傳訊息給 Bot 後，點下方按鈕自動取得 User ID</div>
+      <button class="btn btn-teal" onclick="fetchUserId()">🔍 取得公務手機 User ID</button>
+      <div id="fetchResult" style="margin-top:10px;font-size:13px;display:none"></div>
+    </div>
+
+    <button class="btn btn-outline btn-sm" onclick="testLine()">🔔 發送測試通知</button>
+  </div>
+
+  <!-- 通知設定 -->
+  <div class="card">
+    <div class="card-title">🔔 通知內容設定</div>
+    <div class="f" style="margin-bottom:12px">
+      <label>診所名稱（顯示在通知中）</label>
+      <input id="clinicName" type="text" placeholder="例：陽光牙醫診所" value="">
+    </div>
+    <button class="btn btn-teal" onclick="saveSettings()">💾 儲存設定</button>
+  </div>
+
+  <!-- Google Auth info -->
+  <div class="card">
+    <div class="card-title">ℹ️ Google Calendar 說明</div>
+    <div style="font-size:13px;color:var(--slate);line-height:1.8">
+      Google Calendar 連動請到「<strong>預約</strong>」頁面設定。<br>
+      連動後可讀取當日預約名單，報到時自動比對。<br><br>
+      <strong>注意：</strong>首次連接需要在有桌面瀏覽器的環境授權，iPad 上可能需要允許彈出視窗。
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modalTitle">患者資料</h3>
+    <div class="detail-grid" id="detailContent"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal()">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+/* ══ Config ══ */
+const GC_CLIENT_ID = '270146255543-mi5acul1or04aulob98538volgdkm194.apps.googleusercontent.com';
+const GC_SCOPES    = 'https://www.googleapis.com/auth/calendar';
+
+/* ══ State ══ */
+let queue      = JSON.parse(localStorage.getItem('clinic_queue')||'[]');
+let nextNum    = parseInt(localStorage.getItem('clinic_next')||'1');
+let calEvents  = [];
+let gcToken    = null;
+let gcExpiry   = 0;
+let gcClient   = null;
+let lineToken  = localStorage.getItem('line_token')||'';
+let lineUserId = localStorage.getItem('line_user_id')||'';
+let clinicName = localStorage.getItem('clinic_name')||'牙科診所';
+
+/* ══ Init ══ */
+window.onload = () => {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('dateInput').value = today;
+  document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  document.getElementById('clinicName').value = clinicName;
+
+  if(lineToken) document.getElementById('lineToken').value = lineToken;
+  if(lineUserId) document.getElementById('lineUserId').value = lineUserId;
+  updateLineUI();
+
+  updateClock(); setInterval(updateClock, 1000);
+  renderQueue(); updateStats();
+  waitForGsi();
+};
+
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').innerHTML =
+    now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'<br>'+
+    (now.getHours()<12?'上午診':'下午診');
+}
+
+/* ══ Tabs ══ */
+function showTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['checkin','queue','calendar','settings'];
+    t.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+}
+
+/* ══ Google Calendar Auth ══ */
+function waitForGsi(){
+  if(window.google?.accounts?.oauth2){ setupGc(); }
+  else { setTimeout(waitForGsi, 300); }
+}
+
+function setupGc(){
+  gcClient = google.accounts.oauth2.initTokenClient({
+    client_id: GC_CLIENT_ID, scope: GC_SCOPES,
+    callback: onGcToken,
+  });
+  const saved = localStorage.getItem('gc_token');
+  const exp   = parseInt(localStorage.getItem('gc_expiry')||'0');
+  if(saved && Date.now()<exp){
+    gcToken=saved; gcExpiry=exp;
+    setGcUI(true); loadCalendars();
+  }
+}
+
+function onGcToken(r){
+  if(r.error){ toast('授權失敗：'+r.error,'red'); return; }
+  gcToken  = r.access_token;
+  gcExpiry = Date.now()+(r.expires_in-60)*1000;
+  localStorage.setItem('gc_token',gcToken);
+  localStorage.setItem('gc_expiry',gcExpiry);
+  setGcUI(true); loadCalendars();
+}
+
+function handleGcAuth(){
+  if(!gcClient){ toast('Google API 載入中...','amber'); return; }
+  if(gcToken && Date.now()<gcExpiry){
+    google.accounts.oauth2.revoke(gcToken,()=>{});
+    gcToken=null;
+    localStorage.removeItem('gc_token'); localStorage.removeItem('gc_expiry');
+    setGcUI(false);
+    document.getElementById('calSel').innerHTML='<option>-- 請先授權 --</option>';
+    document.getElementById('calSel').disabled=true;
+    document.getElementById('evList').innerHTML='<div class="hint">請先連接 Google Calendar</div>';
+    return;
+  }
+  gcClient.requestAccessToken({prompt:'consent'});
+}
+
+function setGcUI(on){
+  document.getElementById('gcDot').className='ldot'+(on?' on':'');
+  document.getElementById('gcLabel').textContent=on?'已連接 Google Calendar':'尚未連接';
+  document.getElementById('gcBtn').textContent=on?'🔓 中斷連接':'🔗 連接 Google Calendar';
+  document.getElementById('gcBtn').className='btn '+(on?'btn-red':'btn-teal');
+}
+
+async function gcFetch(path,opts={}){
+  const r=await fetch('https://www.googleapis.com/calendar/v3'+path,{
+    ...opts, headers:{Authorization:'Bearer '+gcToken,'Content-Type':'application/json',...(opts.headers||{})}
+  });
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||r.statusText);}
+  return r.status===204?null:r.json();
+}
+
+async function loadCalendars(){
+  try{
+    const d=await gcFetch('/users/me/calendarList');
+    const sel=document.getElementById('calSel');
+    sel.innerHTML='<option value="">-- 選擇日曆 --</option>'+
+      (d.items||[]).map(c=>`<option value="${c.id}">${c.summary}</option>`).join('');
+    sel.disabled=false;
+    toast('✅ 已載入 '+(d.items||[]).length+' 個日曆');
+  }catch(e){toast('載入日曆失敗：'+e.message,'red');}
+}
+
+function onCalChange(){ loadEvents(); }
+
+async function loadEvents(){
+  const calId=document.getElementById('calSel').value;
+  const date=document.getElementById('dateInput').value;
+  if(!calId||!date||!gcToken) return;
+  const tMin=new Date(date+'T00:00:00').toISOString();
+  const tMax=new Date(date+'T23:59:59').toISOString();
+  try{
+    const p=new URLSearchParams({timeMin:tMin,timeMax:tMax,singleEvents:'true',orderBy:'startTime'});
+    const d=await gcFetch('/calendars/'+encodeURIComponent(calId)+'/events?'+p);
+    calEvents=d.items||[];
+    document.getElementById('evCount').textContent=calEvents.length?`(${calEvents.length})`:'';
+    renderEvList(); syncEvSel();
+    toast('📅 載入 '+calEvents.length+' 個預約事件');
+  }catch(e){toast('載入失敗：'+e.message,'red');}
+}
+
+function renderEvList(){
+  const el=document.getElementById('evList');
+  if(!calEvents.length){el.innerHTML='<div class="hint">當日無預約事件</div>';return;}
+  el.innerHTML=calEvents.map(ev=>{
+    const t=ev.start?.dateTime?new Date(ev.start.dateTime).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}):'全天';
+    return `<div class="ev-card" id="ec-${ev.id}" onclick="selectEvent('${ev.id}')">
+      <div class="ev-name">${ev.summary||'(無標題)'}</div>
+      <div class="ev-time">🕐 ${t}${ev.description?' · '+ev.description.slice(0,20):''}</div>
+    </div>`;
+  }).join('');
+}
+
+function syncEvSel(){
+  document.getElementById('fEv').innerHTML='<option value="">-- 無預約 / 直接報到 --</option>'+
+    calEvents.map(ev=>{
+      const t=ev.start?.dateTime?new Date(ev.start.dateTime).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}):'全天';
+      return `<option value="${ev.id}">${t} ${ev.summary||'(無標題)'}</option>`;
+    }).join('');
+}
+
+function selectEvent(id){
+  document.querySelectorAll('.ev-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('ec-'+id)?.classList.add('sel');
+  const ev=calEvents.find(e=>e.id===id);
+  if(!ev) return;
+  document.getElementById('fEv').value=id;
+  if(ev.summary) document.getElementById('fName').value=ev.summary;
+  if(ev.start?.dateTime) document.getElementById('fTime').value=new Date(ev.start.dateTime).toTimeString().slice(0,5);
+  // Switch to checkin tab
+  showTab('checkin');
+  toast('已選取預約：'+ev.summary);
+}
+
+/* ══ LINE Messaging API ══ */
+function saveLineToken(){
+  lineToken=document.getElementById('lineToken').value.trim();
+  if(!lineToken){ toast('請輸入 Token','amber'); return; }
+  localStorage.setItem('line_token',lineToken);
+  updateLineUI();
+  toast('✅ Channel Access Token 已儲存');
+}
+
+function saveUserId(){
+  lineUserId=document.getElementById('lineUserId').value.trim();
+  if(!lineUserId){ toast('請輸入 User ID','amber'); return; }
+  localStorage.setItem('line_user_id',lineUserId);
+  updateLineUI();
+  toast('✅ User ID 已儲存');
+}
+
+function updateLineUI(){
+  const on = lineToken && lineUserId;
+  document.getElementById('lineDot').className='ldot'+(on?' on':'');
+  document.getElementById('lineLabel').textContent=on?'LINE 通知已啟用 ✅':(!lineToken?'請填入 Token':'請填入 User ID');
+}
+
+async function fetchUserId(){
+  if(!lineToken){ toast('請先儲存 Channel Access Token','amber'); return; }
+  const btn=document.getElementById('fetchResult');
+  try{
+    // Use corsproxy to call LINE API and get recent messages sender
+    const proxyUrl='https://corsproxy.io/?'+encodeURIComponent('https://api.line.me/v2/bot/followers/ids');
+    const res=await fetch(proxyUrl,{
+      headers:{'Authorization':'Bearer '+lineToken}
+    });
+    const data=await res.json();
+    const userIds=data.userIds||[];
+    const el=document.getElementById('fetchResult');
+    el.style.display='block';
+    if(userIds.length===0){
+      el.innerHTML='<div style="color:var(--red)">⚠️ 尚未找到使用者，請確認公務手機已傳訊息給 Bot</div>';
+      return;
+    }
+    // Show all found user IDs
+    el.innerHTML='<div style="color:var(--green);font-weight:700;margin-bottom:8px">✅ 找到以下 User ID：</div>'+
+      userIds.map((uid,i)=>`<div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;font-family:monospace">${uid}</span>
+        <button class="btn-green-sm" onclick="applyUserId('${uid}')">套用</button>
+      </div>`).join('');
+  }catch(e){
+    const el=document.getElementById('fetchResult');
+    el.style.display='block';
+    el.innerHTML='<div style="color:var(--red)">取得失敗：'+e.message+'</div>';
+  }
+}
+
+function applyUserId(uid){
+  lineUserId=uid;
+  localStorage.setItem('line_user_id',lineUserId);
+  document.getElementById('lineUserId').value=uid;
+  updateLineUI();
+  document.getElementById('fetchResult').style.display='none';
+  toast('✅ User ID 已套用！');
+}
+
+async function sendLine(msg){
+  if(!lineToken||!lineUserId) return;
+  const payload = JSON.stringify({to:lineUserId,messages:[{type:'text',text:msg}]});
+  try{
+    const res = await fetch('https://line-proxy.cindy102360.workers.dev/',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+lineToken,'Content-Type':'application/json'},
+      body:payload
+    });
+    if(res.ok){ console.log('LINE 發送成功'); return true; }
+    const err = await res.text();
+    console.warn('LINE 發送失敗：',err);
+    return false;
+  }catch(e){
+    console.warn('LINE 發送失敗',e);
+    return false;
+  }
+}
+
+async function testLine(){
+  if(!lineToken||!lineUserId){ toast('請先完成 Token 和 User ID 設定','amber'); return; }
+  toast('發送中...','amber');
+  const ok = await sendLine('🔔 【'+clinicName+'】系統測試通知\n報到系統運作正常 ✅\n時間：'+new Date().toLocaleTimeString('zh-TW'));
+  if(ok!==false){ toast('✅ 已發送，請查看公務手機 LINE'); }
+  else { toast('❌ 發送失敗，請確認 Token 和 User ID 是否正確','red'); }
+}
+
+function saveSettings(){
+  clinicName=document.getElementById('clinicName').value.trim()||'牙科診所';
+  localStorage.setItem('clinic_name',clinicName);
+  toast('✅ 設定已儲存');
+}
+
+/* ══ Queue ══ */
+function addPatient(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){ toast('⚠️ 請填入患者姓名','amber'); return; }
+  const pid=document.getElementById('fId').value.trim();
+  const evId=document.getElementById('fEv').value;
+  const ev=calEvents.find(e=>e.id===evId);
+  const isNew=!pid && !evId;
+
+  const p={
+    id:Date.now(), num:nextNum++, name,
+    pid, phone:document.getElementById('fPhone').value.trim(),
+    dept:'牙科', time:document.getElementById('fTime').value,
+    note:document.getElementById('fNote').value.trim(),
+    eventId:evId, eventTitle:ev?.summary||'',
+    isNew, status:'waiting',
+    checkinAt:new Date().toLocaleTimeString('zh-TW'),
+  };
+  queue.push(p); save(); renderQueue(); updateStats(); clearForm();
+
+  // LINE 通知
+  const emoji = isNew ? '🆕' : '✅';
+  const type  = isNew ? '新病患（未預約）' : '預約患者';
+  const msg   = `\n${emoji} 【${clinicName}】\n${type}：${name} 已報到\n時間：${p.time}\n號碼：#${p.num}${p.note?'\n主訴：'+p.note:''}`;
+  sendLine(msg);
+
+  toast(`${emoji} ${name} 報到成功！號碼 #${p.num}`);
+  showTab('queue');
+}
+
+function updateStatus(id,s){
+  const p=queue.find(q=>q.id===id);
+  if(!p) return;
+  p.status=s;
+  save(); renderQueue(); updateStats();
+  if(s==='called'){
+    sendLine(`\n📢 【${clinicName}】\n叫號：#${p.num} ${p.name} 請進診間`);
+  }
+}
+
+function removePatient(id){
+  if(!confirm('確定移除此患者？')) return;
+  queue=queue.filter(q=>q.id!==id);
+  save(); renderQueue(); updateStats(); toast('已移除患者');
+}
+
+function showDetail(id){
+  const p=queue.find(q=>q.id===id);
+  if(!p) return;
+  document.getElementById('modalTitle').textContent=(p.isNew?'🆕 新病患：':'🦷 患者：')+p.name;
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detail-item"><div class="detail-label">號碼</div><div class="detail-val">#${p.num}</div></div>
+    <div class="detail-item"><div class="detail-label">狀態</div><div class="detail-val">${{waiting:'⏳ 等候中',called:'📢 叫號中',done:'✅ 已看診',absent:'❌ 未到'}[p.status]}</div></div>
+    <div class="detail-item"><div class="detail-label">身分證後兩碼</div><div class="detail-val">${p.pid||'—'}</div></div>
+    <div class="detail-item"><div class="detail-label">電話</div><div class="detail-val">${p.phone||'—'}</div></div>
+    <div class="detail-item"><div class="detail-label">看診時間</div><div class="detail-val">${p.time}</div></div>
+    <div class="detail-item"><div class="detail-label">報到時間</div><div class="detail-val">${p.checkinAt}</div></div>
+    <div class="detail-item full"><div class="detail-label">預約事件</div><div class="detail-val">${p.eventTitle||'無預約'}</div></div>
+    <div class="detail-item full"><div class="detail-label">主訴</div><div class="detail-val">${p.note||'—'}</div></div>`;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('detailOverlay').classList.remove('open'); }
+
+function renderQueue(){
+  const el=document.getElementById('qList');
+  if(!queue.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🦷</div><p>今日尚無候診患者</p></div>';
+    return;
+  }
+  const sm={waiting:'<span class="badge bw">⏳ 等候中</span>',called:'<span class="badge bc">📢 叫號中</span>',done:'<span class="badge bd">✅ 已看診</span>',absent:'<span class="badge ba">❌ 未到</span>'};
+  el.innerHTML=queue.map(p=>`
+    <div class="q-card">
+      <div class="q-num">${p.num}</div>
+      <div class="q-info">
+        <div class="q-name">${p.name}${p.isNew?'<span class="new-badge">新病患</span>':''}</div>
+        <div class="q-meta">${p.time} · ${p.pid?'後兩碼：'+p.pid:'未提供'} · ${p.phone||'無電話'}</div>
+        ${p.eventTitle?`<div class="q-ev">📅 ${p.eventTitle}</div>`:''}
+        ${p.note?`<div class="q-meta" style="margin-top:2px">💬 ${p.note}</div>`:''}
+      </div>
+      <div class="q-actions">
+        ${sm[p.status]}
+        <div class="q-btns">
+          <button class="btn-gray-sm" onclick="showDetail(${p.id})">👁</button>
+          ${p.status==='waiting'?`<button class="btn-amber-sm" onclick="updateStatus(${p.id},'called')">📢</button>`:''}
+          ${p.status!=='done'?`<button class="btn-green-sm" onclick="updateStatus(${p.id},'done')">✅</button>`:''}
+          ${p.status!=='absent'?`<button class="btn-red-sm" onclick="updateStatus(${p.id},'absent')">❌</button>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function updateStats(){
+  document.getElementById('sTotal').textContent=queue.length;
+  document.getElementById('sWait').textContent=queue.filter(q=>q.status==='waiting'||q.status==='called').length;
+  document.getElementById('sDone').textContent=queue.filter(q=>q.status==='done').length;
+  document.getElementById('sAbsent').textContent=queue.filter(q=>q.status==='absent').length;
+}
+
+function clearForm(){
+  ['fName','fId','fPhone','fNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fTime').value='09:00';
+  document.getElementById('fEv').value='';
+  document.querySelectorAll('.ev-card').forEach(c=>c.classList.remove('sel'));
+}
+
+function clearAll(){
+  if(!confirm('確定清空今日所有候診資料？')) return;
+  queue=[]; nextNum=1; save(); renderQueue(); updateStats(); toast('已清空候診名單');
+}
+
+function save(){
+  localStorage.setItem('clinic_queue',JSON.stringify(queue));
+  localStorage.setItem('clinic_next',nextNum);
+}
+
+function exportCSV(){
+  if(!queue.length){ toast('無資料可匯出','amber'); return; }
+  const hdr='號碼,姓名,身分證後兩碼,電話,診別,時間,是否新病患,預約事件,狀態,報到時間,主訴';
+  const rows=queue.map(p=>[p.num,p.name,p.pid,p.phone,p.dept,p.time,p.isNew?'新病患':'舊患者',p.eventTitle,p.status,p.checkinAt,p.note].map(v=>`"${v||''}"`).join(','));
+  const csv='\uFEFF'+[hdr,...rows].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='候診名單_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); toast('✅ CSV 匯出完成');
+}
+
+let tt;
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.background=type==='red'?'#ef4444':type==='amber'?'#f59e0b':'#0f172a';
+  el.classList.add('show'); clearTimeout(tt);
+  tt=setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
